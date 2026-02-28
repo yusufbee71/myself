@@ -12,6 +12,7 @@ const INITIAL_STATE = Object.fromEntries(
   Object.keys(config.contact.form).map((input) => [input, ""])
 );
 
+
 const emailjsConfig = {
   serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID,
   templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
@@ -22,6 +23,7 @@ const Contact = () => {
   const formRef = useRef<React.LegacyRef<HTMLFormElement> | undefined>();
   const [form, setForm] = useState(INITIAL_STATE);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | undefined
@@ -36,33 +38,32 @@ const Contact = () => {
     e.preventDefault();
     setLoading(true);
 
-    emailjs
-      .send(
-        emailjsConfig.serviceId,
-        emailjsConfig.templateId,
-        {
-          form_name: form.name,
-          to_name: config.html.fullName,
-          from_email: form.email,
-          to_email: config.html.email,
-          message: form.message,
-        },
-        emailjsConfig.accessToken
-      )
-      .then(
-        () => {
-          setLoading(false);
-          alert("Thank you. I will get back to you as soon as possible.");
+emailjs
+  .send(
+    emailjsConfig.serviceId,
+    emailjsConfig.templateId,
+    {
+      form_name: form.name,
+      to_name: config.html.fullName,
+      from_email: form.email,
+      to_email: config.html.email,
+      message: form.message,
+    },
+    emailjsConfig.accessToken
+  )
+  .then(() => {
+    setLoading(false);
+    setSuccess(true);
+    setForm(INITIAL_STATE);
 
-          setForm(INITIAL_STATE);
-        },
-        (error) => {
-          setLoading(false);
-
-          console.log(error);
-          alert("Something went wrong.");
-        }
-      );
+    setTimeout(() => {
+      setSuccess(false);
+    }, 4000);
+  })
+  .catch((error) => {
+    console.log(error);
+    setLoading(false);
+  });
   };
 
   return (
@@ -74,6 +75,13 @@ const Contact = () => {
         className="bg-black-100 flex-[0.75] rounded-2xl p-8"
       >
         <Header useMotion={false} {...config.contact} />
+
+
+       {success && (
+  <div className="mb-6 rounded-lg bg-green-500 p-4 text-center font-semibold text-white">
+    ✅ Message sent to admin successfully!
+  </div>
+)}
 
         <form
           // @ts-expect-error
@@ -101,12 +109,13 @@ const Contact = () => {
               </label>
             );
           })}
-          <button
-            type="submit"
-            className="bg-tertiary shadow-primary w-fit rounded-xl px-8 py-3 font-bold text-white shadow-md outline-none"
-          >
-            {loading ? "Sending..." : "Send"}
-          </button>
+         <button
+  type="submit"
+  disabled={loading}
+  className="bg-tertiary shadow-primary w-fit rounded-xl px-8 py-3 font-bold text-white shadow-md outline-none disabled:opacity-50"
+>
+  {loading ? "Sending to admin..." : "Send"}
+</button>
         </form>
       </motion.div>
 
